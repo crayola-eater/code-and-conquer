@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
   #[error("Invalid coordinates row = {row}, column = {column}")]
-  InvalidCoordinates { row: usize, column: usize },
+  InvalidCoordinates { row: i32, column: i32 },
 
   #[error("Failed to {action}. Game status is currently {current:?}, but needs to be {required:?} to perform this action.")]
   InvalidGameStatus {
@@ -30,6 +30,9 @@ pub enum Error {
 
   #[error("Failed to attack square, please recheck request.")]
   FailedToAttackSquare,
+
+  #[error("Failed to defend square, please recheck request.")]
+  FailedToDefendSquare,
 
   #[error("Failed to query grid square, please recheck game_id and coordinates.")]
   FailedToQueryGridSquare,
