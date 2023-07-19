@@ -76,3 +76,11 @@ pub struct SenderDetails {
   pub team_id: i32,
   pub team_key: String,
 }
+
+#[derive(Debug, Copy, Clone, IntoStaticStr, Serialize, Deserialize)]
+pub enum DatabaseErrorKind {
+  InvalidGameId,
+  InvalidCredentials,
+  NoMoreRequestsLeft,
+  InvalidCoordinates,
+}
