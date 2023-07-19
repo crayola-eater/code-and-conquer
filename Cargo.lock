@@ -167,6 +167,7 @@ name = "code-and-conquer"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "postgres-syntax",
  "rstest",
  "serde",
  "serde_json",
@@ -664,6 +665,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7012b1bbb0719e1097c47611d3898568c546d597c2e74d66f6087edd5233ff4"
 
 [[package]]
+name = "libpg_query2-sys"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d979a53e72f7d8f76effd232a0605b0abb815414452d4e734fbcbbd06f4fccf"
+
+[[package]]
 name = "libsqlite3-sys"
 version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -679,6 +686,12 @@ name = "linux-raw-sys"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef53942eb7bf7ff43a617b3e2c1c4a5ecf5944a7c1bc12d7ee39bbb15e5c1519"
+
+[[package]]
+name = "litrs"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f17c3668f3cc1132437cdadc93dab05e52d592f06948d3f64828430c36e4a70"
 
 [[package]]
 name = "lock_api"
@@ -968,6 +981,17 @@ name = "pkg-config"
 version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
+
+[[package]]
+name = "postgres-syntax"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dfdcf9c8e70445108ae6973a373f2b0780026e933d22a5f9303baa1a1cf29d3b"
+dependencies = [
+ "libpg_query2-sys",
+ "litrs",
+ "quote",
+]
 
 [[package]]
 name = "ppv-lite86"
