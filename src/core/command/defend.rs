@@ -11,4 +11,5 @@ pub struct DefendRequest {
 #[derive(Debug)]
 pub struct DefendResponse {
   pub square: GridSquare,
+  pub requests_left: i32,
 }
