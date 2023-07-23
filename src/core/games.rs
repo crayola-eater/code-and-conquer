@@ -588,7 +588,7 @@ impl Games {
     .bind(request.column_index)
     .fetch_optional(&self.db_pool)
     .await?
-    .ok_or_else(|| Error::FailedToQueryGridSquare)?;
+    .ok_or(Error::FailedToQueryGridSquare)?;
 
     let square = GridSquare {
       id: square_id,
