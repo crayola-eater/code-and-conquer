@@ -1,0 +1,53 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table game {
+  id integer [pk]
+  created_at timestamptz [not null]
+  status varchar(50) [not null]
+}
+
+Table team {
+  id integer [pk]
+  game_id integer [not null, ref: - game.id]
+  created_at timestamptz [not null]
+  display_name varchar(20) [not null]
+  key varchar(50) [not null]
+  role varchar(20) [not null]
+  role_used bool [not null]
+  requests_left integer [not null]
+  time_of_last_command timestampz
+
+  indexes {
+    (game_id, key) [unique]
+    (game_id, display_name) [unique]
+  }
+}
+
+Table grid_square {
+  id integer [pk]
+  game_id integer [not null, ref: > game.id]
+  owner_id integer [null, ref: > team.id]
+  created_at timestamptz [not null]
+  row_index integer [not null]
+  column_index integer [not null]
+  bonus integer [not null]
+  health integer [not null]
+
+  indexes {
+    (game_id, row_index, column_index) [unique]
+  }
+}
+
+Table mine {
+  id integer [pk]
+  square_id integer [not null, ref: - grid_square.id]
+  game_id integer [not null, ref: > game.id]
+  owner_id integer [not null, ref: - team.id]
+  triggerer_id integer [not null, ref: - team.id]
+
+  indexes {
+    (game_id, owner_id) [unique]
+    (game_id, square_id) [unique]
+  }
+}
