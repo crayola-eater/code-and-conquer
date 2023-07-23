@@ -89,4 +89,4 @@ impl std::convert::From<sqlx::Error> for Error {
   }
 }
 
-pub type Result<'a, T> = core::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;

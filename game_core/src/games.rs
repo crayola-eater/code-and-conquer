@@ -1,8 +1,9 @@
+use crate::commands::{try_create_and_join_a_game, try_join_an_existing_game, GRID_SQUARE_DEFAULT_HEALTH};
 use crate::types::{
-  AttackRequest, AttackResponse, Command, CommandResponse, CreateAndJoinRequest, CreateAndJoinResponse, DatabaseErrorKind,
-  DefendRequest, DefendResponse, Error, Game, GameStatus, GridSquare, JoinExistingRequest, JoinExistingResponse,
-  PlaceMineRequest, PlaceMineResponse, QueryGameRequest, QueryGameResponse, QueryGridResponse, QueryGridSquareRequest,
-  QueryGridSquareResponse, Result, StartRequest, StartResponse, Team,
+  AttackRequest, AttackResponse, CreateAndJoinRequest, CreateAndJoinResponse, DatabaseErrorKind, DefendRequest, DefendResponse,
+  Error, Game, GameStatus, GridSquare, JoinExistingRequest, JoinExistingResponse, PlaceMineRequest, PlaceMineResponse,
+  QueryGameRequest, QueryGameResponse, QueryGridResponse, QueryGridSquareRequest, QueryGridSquareResponse, Result, StartRequest,
+  StartResponse, Team,
 };
 use chrono::{DateTime, Utc};
 use postgres_syntax::sql;
@@ -10,10 +11,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::types::Json;
 use sqlx::PgPool;
 
-const REQUESTS_COUNT: i32 = 30;
-const GRID_SQUARE_DEFAULT_HEALTH: i32 = 60;
-
-pub async fn create_random_hex() -> Result<'static, String> {
+pub async fn create_random_hex() -> Result<String> {
   use std::fmt::Write;
   use tokio::fs::File;
   use tokio::io::AsyncReadExt;
@@ -33,7 +31,7 @@ pub async fn create_random_hex() -> Result<'static, String> {
     })
 }
 
-pub async fn create_pool<'a>(database_name: Option<&str>) -> Result<'a, PgPool> {
+pub async fn create_pool<'a>(database_name: Option<&str>) -> Result<PgPool> {
   let database_name = database_name.unwrap_or("postgres");
   // todo: load connection string via env variables
   let url = format!("postgres://postgres:password@localhost/{database_name}");
@@ -45,7 +43,7 @@ pub async fn create_pool<'a>(database_name: Option<&str>) -> Result<'a, PgPool> 
     .map_err(|e| Error::FailedToConnectToDatabase { cause: e.to_string() })
 }
 
-pub async fn setup_database<'a>(db_pool: &PgPool) -> Result<'a, ()> {
+pub async fn setup_database<'a>(db_pool: &PgPool) -> Result<()> {
   sqlx::query("DROP TABLE IF EXISTS mine, grid_square, game, team;")
     .execute(db_pool)
     .await?;
@@ -121,136 +119,18 @@ pub struct Games {
 }
 
 impl Games {
-  pub async fn try_new<'a>(pool: PgPool) -> Result<'a, Self> {
+  pub async fn try_new<'a>(pool: PgPool) -> Result<Self> {
     Ok(Self { db_pool: pool })
   }
 
-  async fn try_create_and_join_a_game<'a>(&mut self, request: CreateAndJoinRequest) -> Result<'a, CreateAndJoinResponse> {
-    let role: &'static str = request.team_role.into();
-    let team_key = create_random_hex().await?;
-    let status: &'static str = GameStatus::WaitingForRegistrations.into();
-
-    let squares = (0..5)
-      .flat_map(|row_index| {
-        (0..5).map(move |column_index| {
-          serde_json::json!({
-            "row_index": row_index,
-            "column_index": column_index,
-            "bonus": 0,
-            "health": GRID_SQUARE_DEFAULT_HEALTH,
-          })
-        })
-      })
-      .collect::<Vec<_>>();
-
-    let squares = serde_json::Value::Array(squares);
-
-    let (game_id, team_id, team_key): (i32, i32, String) = sqlx::query_as(
-      r#"
-      WITH
-        created_game AS (
-          INSERT INTO game (status)
-          VALUES ($5)
-          RETURNING id
-        ),
-        parsed AS (
-          SELECT *
-          FROM jsonb_to_recordset($6) AS X(row_index INTEGER, column_index INTEGER, bonus INTEGER, health INTEGER)
-        ),
-        created_grid_squares AS (
-          INSERT INTO grid_square (game_id, row_index, column_index, bonus, health)
-          SELECT created_game.id, parsed.row_index, parsed.column_index, parsed.bonus, parsed.health
-          FROM parsed, created_game
-        ),
-        created_team AS (
-          INSERT INTO team (game_id, display_name, key, role, requests_left)
-          SELECT created_game.id, $1, $2, $3, $4
-          FROM created_game
-          RETURNING game_id, id, key
-        )
-      SELECT
-        game_id,
-        id AS team_id,
-        key AS team_key
-      FROM created_team;"#,
-    )
-    .bind(&request.display_name)
-    .bind(team_key.as_str())
-    .bind(role)
-    .bind(REQUESTS_COUNT)
-    .bind(status)
-    .bind(squares)
-    .fetch_one(&self.db_pool)
-    .await?;
-
-    Ok(CreateAndJoinResponse {
-      game_id,
-      team_id,
-      team_key,
-    })
+  pub async fn try_create_and_join_a_game<'a>(&mut self, request: CreateAndJoinRequest) -> Result<CreateAndJoinResponse> {
+    try_create_and_join_a_game(&self.db_pool, request).await
   }
 
-  async fn try_join_an_existing_game<'a>(&mut self, request: JoinExistingRequest) -> Result<'a, JoinExistingResponse> {
-    // try find game (otherwise err_invalid_game_id)
-    // proposed = create new team
-    // if game.status != waiting_for_reg:
-    //    err_cannot_join_after_started
-    // if game.teams contains proposed.display_name:
-    //    err_display_name_already_taken
-
-    let expected_status: &'static str = GameStatus::WaitingForRegistrations.into();
-    let role: &'static str = request.team_role.into();
-    let team_key = create_random_hex().await?;
-
-    let row: (Option<i32>, Option<String>, Option<Json<GameStatus>>) = sqlx::query_as(
-      "
-      WITH
-        found AS (
-          SELECT status
-          FROM game
-          WHERE game.id = $1
-          FOR UPDATE
-        ),
-        to_insert AS (
-          SELECT $1, $2, $3, $4, $5
-          FROM found
-          WHERE found.status = $6
-        ),
-        inserted AS (
-          INSERT INTO team (game_id, display_name, key, role, requests_left)
-          SELECT *
-          FROM to_insert
-          RETURNING id, key
-        ),
-        collated AS (
-          SELECT inserted.id, inserted.key, to_json(found.status)
-          FROM found
-          LEFT JOIN inserted
-          ON TRUE
-        )
-      SELECT * FROM collated;",
-    )
-    .bind(request.game_id)
-    .bind(request.display_name)
-    .bind(team_key.as_str())
-    .bind(role)
-    .bind(REQUESTS_COUNT)
-    .bind(expected_status)
-    .fetch_one(&self.db_pool)
-    .await?;
-
-    match row {
-      (Some(team_id), Some(team_key), _) => Ok(JoinExistingResponse { team_id, team_key }),
-      (_, _, Some(Json(old_status))) if old_status != GameStatus::WaitingForRegistrations => {
-        Err(Error::CannotJoinAfterHostHasStarted)
-      }
-      _ => Err(Error::Unexpected {
-        message: "Failed to join game. Please recheck your request and try again.",
-      }),
-    }
+  pub async fn try_join_an_existing_game<'a>(&mut self, request: JoinExistingRequest) -> Result<JoinExistingResponse> {
+    try_join_an_existing_game(&self.db_pool, request).await
   }
-
-  async fn try_attack_a_square<'a>(&mut self, request: AttackRequest) -> Result<'a, AttackResponse> {
+  pub async fn try_attack_a_square<'a>(&mut self, request: AttackRequest) -> Result<AttackResponse> {
     let mut tx = self.db_pool.begin().await?;
 
     let (game_id, Json(game_status), team_id, team_key, requests_left): (i32, Json<GameStatus>, i32, String, i32) =
@@ -374,7 +254,7 @@ impl Games {
     })
   }
 
-  async fn try_defend_a_square<'a>(&mut self, request: DefendRequest) -> Result<'a, DefendResponse> {
+  pub async fn try_defend_a_square<'a>(&mut self, request: DefendRequest) -> Result<DefendResponse> {
     // if creds are ok AND game id is ok AND game status is "started" AND row is ok AND column is ok AND requests_left is greater than 0:
     //    update grid_square
     //    set health =  MAX(
@@ -565,7 +445,7 @@ impl Games {
     Ok(DefendResponse { square, requests_left })
   }
 
-  async fn try_query_grid_square<'a>(&self, request: QueryGridSquareRequest) -> Result<'a, QueryGridSquareResponse> {
+  pub async fn try_query_grid_square<'a>(&self, request: QueryGridSquareRequest) -> Result<QueryGridSquareResponse> {
     type Row = (i32, i32, Option<i32>, DateTime<Utc>, i32, i32, i32, i32);
     let (square_id, game_id, owner_id, created_at, row_index, column_index, bonus, health): Row = sqlx::query_as(
       "
@@ -605,11 +485,11 @@ impl Games {
     Ok(QueryGridSquareResponse { square })
   }
 
-  async fn try_query_grid<'a>(&self) -> Result<'a, QueryGridResponse> {
+  pub async fn try_query_grid<'a>(&self) -> Result<QueryGridResponse> {
     todo!()
   }
 
-  async fn try_query_game<'a>(&self, request: QueryGameRequest) -> Result<'a, QueryGameResponse> {
+  pub async fn try_query_game<'a>(&self, request: QueryGameRequest) -> Result<QueryGameResponse> {
     type Row = (i32, DateTime<Utc>, Json<GameStatus>, Json<Vec<Team>>, Json<Vec<GridSquare>>);
 
     let (game_id, created_at, Json(status), Json(teams), Json(grid)): Row = sqlx::query_as(
@@ -654,11 +534,11 @@ impl Games {
     Ok(QueryGameResponse { game })
   }
 
-  async fn try_place_a_mine<'a>(&mut self, request: PlaceMineRequest) -> Result<'a, PlaceMineResponse> {
+  pub async fn try_place_a_mine<'a>(&mut self, request: PlaceMineRequest) -> Result<PlaceMineResponse> {
     todo!("{request:?}")
   }
 
-  async fn try_start<'a>(&mut self, request: StartRequest) -> Result<'a, StartResponse> {
+  pub async fn try_start<'a>(&mut self, request: StartRequest) -> Result<StartResponse> {
     let expected_status: &'static str = GameStatus::WaitingForRegistrations.into();
     let next_status: &'static str = GameStatus::Started.into();
 
@@ -748,19 +628,19 @@ impl Games {
     }
   }
 
-  pub async fn try_process_command<'a>(&mut self, command: Command) -> Result<'a, CommandResponse> {
-    match command {
-      Command::CreateAndJoin(options) => Ok(CommandResponse::CreateAndJoin(
-        self.try_create_and_join_a_game(options).await?,
-      )),
-      Command::JoinExisting(options) => Ok(CommandResponse::JoinExisting(self.try_join_an_existing_game(options).await?)),
-      Command::Attack(options) => Ok(CommandResponse::Attack(self.try_attack_a_square(options).await?)),
-      Command::Defend(options) => Ok(CommandResponse::Defend(self.try_defend_a_square(options).await?)),
-      Command::QueryGridSquare(options) => Ok(CommandResponse::QueryGridSquare(self.try_query_grid_square(options).await?)),
-      Command::QueryGrid => Ok(CommandResponse::QueryGrid(self.try_query_grid().await?)),
-      Command::QueryGame(options) => Ok(CommandResponse::QueryGame(self.try_query_game(options).await?)),
-      Command::PlaceMine(options) => Ok(CommandResponse::PlaceMine(self.try_place_a_mine(options).await?)),
-      Command::Start(options) => Ok(CommandResponse::Start(self.try_start(options).await?)),
-    }
-  }
+  // pub async fn try_process_command<'a>(&mut self, command: Command) -> Result<CommandResponse> {
+  //   match command {
+  //     Command::CreateAndJoin(options) => Ok(CommandResponse::CreateAndJoin(
+  //       self.try_create_and_join_a_game(options).await?,
+  //     )),
+  //     Command::JoinExisting(options) => Ok(CommandResponse::JoinExisting(self.try_join_an_existing_game(options).await?)),
+  //     Command::Attack(options) => Ok(CommandResponse::Attack(self.try_attack_a_square(options).await?)),
+  //     Command::Defend(options) => Ok(CommandResponse::Defend(self.try_defend_a_square(options).await?)),
+  //     Command::QueryGridSquare(options) => Ok(CommandResponse::QueryGridSquare(self.try_query_grid_square(options).await?)),
+  //     Command::QueryGrid => Ok(CommandResponse::QueryGrid(self.try_query_grid().await?)),
+  //     Command::QueryGame(options) => Ok(CommandResponse::QueryGame(self.try_query_game(options).await?)),
+  //     Command::PlaceMine(options) => Ok(CommandResponse::PlaceMine(self.try_place_a_mine(options).await?)),
+  //     Command::Start(options) => Ok(CommandResponse::Start(self.try_start(options).await?)),
+  //   }
+  // }
 }

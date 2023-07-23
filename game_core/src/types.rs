@@ -2,18 +2,20 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum_macros::IntoStaticStr;
 
-pub use crate::core::command::attack::{AttackRequest, AttackResponse};
-pub use crate::core::command::create_and_join::{CreateAndJoinRequest, CreateAndJoinResponse};
-pub use crate::core::command::defend::{DefendRequest, DefendResponse};
-pub use crate::core::command::join_existing::{JoinExistingRequest, JoinExistingResponse};
-pub use crate::core::command::place_mine::{PlaceMineRequest, PlaceMineResponse};
-pub use crate::core::command::query::{
+pub use crate::commands::{AttackRequest, AttackResponse};
+// pub use crate::commands::{Command, CommandResponse};
+pub use crate::commands::{CreateAndJoinRequest, CreateAndJoinResponse};
+pub use crate::commands::{DefendRequest, DefendResponse};
+pub use crate::commands::{JoinExistingRequest, JoinExistingResponse};
+pub use crate::commands::{PlaceMineRequest, PlaceMineResponse};
+pub use crate::commands::{
   QueryGameRequest, QueryGameResponse, QueryGridResponse, QueryGridSquareRequest, QueryGridSquareResponse,
 };
-pub use crate::core::command::start::{StartRequest, StartResponse};
-pub use crate::core::command::{Command, CommandResponse};
-pub use crate::core::error::{Error, Result};
-pub use crate::core::games::Games;
+pub use crate::commands::{StartRequest, StartResponse};
+pub use crate::error::{Error, Result};
+pub use crate::games::Games;
+
+pub use sqlx::PgPool;
 
 #[derive(Debug, PartialEq, Copy, Clone, IntoStaticStr, Serialize, Deserialize)]
 pub enum TeamRole {
