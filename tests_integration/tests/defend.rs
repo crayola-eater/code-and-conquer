@@ -1,12 +1,8 @@
-use rstest::*;
-
-mod test_helpers;
-use test_helpers::{setup_with_players, start_game, TestSetup};
-
 use game_core::types::{
-  AttackRequest, AttackResponse, Command, CommandResponse, DefendRequest, DefendResponse, Error, GameStatus, QueryGameRequest,
-  SenderDetails, TeamRole,
+  AttackRequest, AttackResponse, DefendRequest, DefendResponse, Error, GameStatus, QueryGameRequest, SenderDetails, TeamRole,
 };
+use rstest::*;
+use tests_integration::{setup_with_players, start_game, TestSetup};
 
 #[rstest]
 #[tokio::test]
@@ -28,19 +24,15 @@ async fn test_should_be_able_to_defend_an_unattacked_square(
     team_key: added[0].1.clone(),
   };
 
-  let defend = DefendRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let DefendResponse { square, requests_left } = match games.try_process_command(command).await.unwrap() {
-    CommandResponse::Defend(response) => response,
-    unexpected => unreachable!("{unexpected:?}"),
-  };
+  let DefendResponse { square, requests_left } = games
+    .try_defend_a_square(DefendRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap();
 
   assert_eq!(square.game_id, game_id);
   assert_eq!(square.row, coordinates.0);
@@ -48,16 +40,7 @@ async fn test_should_be_able_to_defend_an_unattacked_square(
   assert_eq!(square.owner_id, None);
   assert_eq!(requests_left, 29);
 
-  let response = {
-    let query = QueryGameRequest { game_id };
-
-    let command = Command::QueryGame(query);
-
-    match games.try_process_command(command).await.unwrap() {
-      CommandResponse::QueryGame(response) => response,
-      unexpected => unreachable!("{unexpected:?}"),
-    }
-  };
+  let response = games.try_query_game(QueryGameRequest { game_id }).await.unwrap();
 
   let team = response.game.teams.iter().find(|team| team.id == added[0].0).unwrap();
 
@@ -93,23 +76,19 @@ async fn test_should_be_able_to_defend_an_attacked_square(
     team_key: added[0].1.clone(),
   };
 
-  let attack = AttackRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Attack(attack);
-
   let AttackResponse {
     conquered,
     requests_left,
     square,
-  } = match games.try_process_command(command).await.unwrap() {
-    CommandResponse::Attack(response) => response,
-    unexpected => unreachable!("{unexpected:?}"),
-  };
+  } = games
+    .try_attack_a_square(AttackRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap();
 
   assert!(!conquered);
   assert_eq!(requests_left, 29);
@@ -124,19 +103,15 @@ async fn test_should_be_able_to_defend_an_attacked_square(
     team_key: added[1].1.clone(),
   };
 
-  let defend = DefendRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let DefendResponse { square, requests_left } = match games.try_process_command(command).await.unwrap() {
-    CommandResponse::Defend(response) => response,
-    unexpected => unreachable!("{unexpected:?}"),
-  };
+  let DefendResponse { square, requests_left } = games
+    .try_defend_a_square(DefendRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap();
 
   assert_eq!(square.game_id, game_id);
   assert_eq!(square.row, coordinates.0);
@@ -164,16 +139,15 @@ async fn test_should_not_be_able_to_defend_square_when_game_has_not_started(
     team_key: added[0].1.clone(),
   };
 
-  let defend = DefendRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let error = games.try_process_command(command).await.unwrap_err();
+  let error = games
+    .try_defend_a_square(DefendRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap_err();
 
   assert_eq!(
     error,
@@ -206,16 +180,15 @@ async fn test_should_not_be_able_to_defend_square_when_game_id_is_invalid(
     team_key: added[0].1.clone(),
   };
 
-  let defend = DefendRequest {
-    game_id: invalid_game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let error = games.try_process_command(command).await.unwrap_err();
+  let error = games
+    .try_defend_a_square(DefendRequest {
+      game_id: invalid_game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap_err();
 
   assert_eq!(
     error,
@@ -246,16 +219,15 @@ async fn test_should_not_be_able_to_defend_square_when_team_id_is_invalid(
     team_key: invalid_team_key,
   };
 
-  let defend = DefendRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let error = games.try_process_command(command).await.unwrap_err();
+  let error = games
+    .try_defend_a_square(DefendRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap_err();
 
   assert_eq!(error, Error::InvalidCredentials);
 }
@@ -281,19 +253,15 @@ async fn test_should_not_be_able_to_defend_a_square_when_no_requests_left(
       team_key: added[0].1.clone(),
     };
 
-    let defend = DefendRequest {
-      game_id,
-      row_index: coordinates.0,
-      column_index: coordinates.1,
-      sender,
-    };
-
-    let command = Command::Defend(defend);
-
-    let DefendResponse { square, requests_left } = match games.try_process_command(command).await.unwrap() {
-      CommandResponse::Defend(response) => response,
-      unexpected => unreachable!("{unexpected:?}"),
-    };
+    let DefendResponse { square, requests_left } = games
+      .try_defend_a_square(DefendRequest {
+        game_id,
+        row_index: coordinates.0,
+        column_index: coordinates.1,
+        sender,
+      })
+      .await
+      .unwrap();
 
     assert_eq!(square.game_id, game_id);
     assert_eq!(square.row, coordinates.0);
@@ -307,16 +275,15 @@ async fn test_should_not_be_able_to_defend_a_square_when_no_requests_left(
     team_key: added[0].1.clone(),
   };
 
-  let defend = DefendRequest {
-    game_id,
-    row_index: coordinates.0,
-    column_index: coordinates.1,
-    sender,
-  };
-
-  let command = Command::Defend(defend);
-
-  let error = games.try_process_command(command).await.unwrap_err();
+  let error = games
+    .try_defend_a_square(DefendRequest {
+      game_id,
+      row_index: coordinates.0,
+      column_index: coordinates.1,
+      sender,
+    })
+    .await
+    .unwrap_err();
 
   assert_eq!(error, Error::NoMoreRequestsLeft);
 }

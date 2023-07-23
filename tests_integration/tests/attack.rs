@@ -1,9 +1,6 @@
-use game_core::types::{AttackRequest, AttackResponse, Command, CommandResponse, Error, GameStatus, SenderDetails, TeamRole};
-
+use game_core::types::{AttackRequest, AttackResponse, Error, GameStatus, SenderDetails, TeamRole};
 use rstest::*;
-
-mod test_helpers;
-use test_helpers::{setup_with_players, start_game, TestSetup};
+use tests_integration::{setup_with_players, start_game, TestSetup};
 
 #[rstest]
 #[case::one_player(&[("1", TeamRole::Spy)])]
@@ -27,14 +24,17 @@ async fn test_should_not_be_able_to_attack_unless_game_has_started(#[case] teams
         team_id: *team_id,
         team_key: team_key.clone(),
       };
-      let attack = AttackRequest {
-        row_index: row,
-        column_index: column,
-        game_id,
-        sender,
-      };
-      let command = Command::Attack(attack);
-      let error = games.try_process_command(command).await.unwrap_err();
+
+      let error = games
+        .try_attack_a_square(AttackRequest {
+          row_index: row,
+          column_index: column,
+          game_id,
+          sender,
+        })
+        .await
+        .unwrap_err();
+
       assert!(matches!(
         error,
         Error::InvalidGameStatus {
@@ -72,21 +72,20 @@ async fn test_should_be_able_to_attack_different_squares_without_conquering(#[ca
         team_id: *team_id,
         team_key: team_key.clone(),
       };
-      let attack = AttackRequest {
-        row_index: row,
-        column_index: column,
-        game_id,
-        sender,
-      };
-      let command = Command::Attack(attack);
+
       let AttackResponse {
         square,
         conquered,
         requests_left,
-      } = match games.try_process_command(command).await.unwrap() {
-        CommandResponse::Attack(response) => response,
-        unexpected => unreachable!("{unexpected:?}"),
-      };
+      } = games
+        .try_attack_a_square(AttackRequest {
+          row_index: row,
+          column_index: column,
+          game_id,
+          sender,
+        })
+        .await
+        .unwrap();
 
       assert!(!conquered);
       assert_eq!(requests_left, 29 - j);
@@ -129,21 +128,20 @@ async fn test_should_be_able_to_conquer_a_square(
 
   for (i, (expected_requests_left, team_id, team_key)) in iter.by_ref().take(59) {
     let sender = SenderDetails { team_id, team_key };
-    let attack = AttackRequest {
-      row_index: row,
-      column_index: column,
-      game_id,
-      sender,
-    };
-    let command = Command::Attack(attack);
+
     let AttackResponse {
       square,
       conquered,
       requests_left,
-    } = match games.try_process_command(command).await.unwrap() {
-      CommandResponse::Attack(response) => response,
-      unexpected => unreachable!("{unexpected:?}"),
-    };
+    } = games
+      .try_attack_a_square(AttackRequest {
+        row_index: row,
+        column_index: column,
+        game_id,
+        sender,
+      })
+      .await
+      .unwrap();
 
     assert!(!conquered);
     assert_eq!(requests_left, expected_requests_left);
@@ -159,21 +157,19 @@ async fn test_should_be_able_to_conquer_a_square(
     let (_, (expected_requests_left, team_id, team_key)) = iter.next().unwrap();
 
     let sender = SenderDetails { team_id, team_key };
-    let attack = AttackRequest {
-      row_index: row,
-      column_index: column,
-      game_id,
-      sender,
-    };
-    let command = Command::Attack(attack);
     let AttackResponse {
       square,
       conquered,
       requests_left,
-    } = match games.try_process_command(command).await.unwrap() {
-      CommandResponse::Attack(response) => response,
-      unexpected => unreachable!("{unexpected:?}"),
-    };
+    } = games
+      .try_attack_a_square(AttackRequest {
+        row_index: row,
+        column_index: column,
+        game_id,
+        sender,
+      })
+      .await
+      .unwrap();
 
     assert!(conquered);
     assert_eq!(requests_left, expected_requests_left);
