@@ -508,7 +508,7 @@ impl Games {
       .bind::<&'static str>(DatabaseErrorKind::NoMoreRequestsLeft.into())
       .bind::<&'static str>(DatabaseErrorKind::InvalidCoordinates.into())
       .bind::<&'static str>(GameStatus::Started.into())
-      .bind::<&'static str>(DatabaseErrorKind::InvalidGameState.into())
+      .bind::<&'static str>(DatabaseErrorKind::InvalidGameStatus.into())
       .fetch_one(&self.db_pool)
       .await?;
 
@@ -523,7 +523,7 @@ impl Games {
           game_id: request.game_id,
         },
         DatabaseErrorKind::NoMoreRequestsLeft => Error::NoMoreRequestsLeft,
-        DatabaseErrorKind::InvalidGameState => Error::InvalidGameStatus {
+        DatabaseErrorKind::InvalidGameStatus => Error::InvalidGameStatus {
           current: game_status
             .map(|Json(game_status)| game_status)
             .unwrap_or(GameStatus::WaitingForRegistrations),

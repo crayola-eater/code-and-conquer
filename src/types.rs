@@ -83,4 +83,5 @@ pub enum DatabaseErrorKind {
   InvalidCredentials,
   NoMoreRequestsLeft,
   InvalidCoordinates,
+  InvalidGameStatus,
 }
