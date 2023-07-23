@@ -10,6 +10,14 @@ jobs:
   ci:
     name: build_and_test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        ports: 
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: password
+          
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
