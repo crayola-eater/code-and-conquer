@@ -77,10 +77,9 @@ impl std::convert::From<sqlx::Error> for Error {
         }
 
         if error.is_unique_violation() {
-          match pg_error.table() {
-            Some("team") => return Self::TeamDisplayNameAlreadyTaken,
-            _ => (),
-          };
+          if let Some("team") = pg_error.table() {
+            return Self::TeamDisplayNameAlreadyTaken;
+          }
         }
       }
     }
