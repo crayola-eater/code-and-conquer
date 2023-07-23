@@ -277,7 +277,7 @@ impl Games {
 
     Some(&team_key)
       .filter(|key| key.as_str() == &request.sender.team_key)
-      .ok_or_else(|| Error::InvalidCredentials)?;
+      .ok_or(Error::InvalidCredentials)?;
 
     Some(game_id)
       .filter(|game_id| *game_id == request.game_id)
