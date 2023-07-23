@@ -531,7 +531,7 @@ impl Games {
           action: "defend square",
         },
       })
-      .map_or(Ok(()), |error| Err(error))?;
+      .map_or(Ok(()), Err)?;
 
     let (square_id, _, requests_left, game_id, owner_id, row_index, column_index, created_at, bonus, health) = square_id
       .and_then(|square_id| {
