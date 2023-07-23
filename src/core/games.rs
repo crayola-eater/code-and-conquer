@@ -281,7 +281,7 @@ impl Games {
 
     Some(game_id)
       .filter(|game_id| *game_id == request.game_id)
-      .ok_or_else(|| Error::InvalidGameId {
+      .ok_or(Error::InvalidGameId {
         game_id: request.game_id,
       })?;
 
