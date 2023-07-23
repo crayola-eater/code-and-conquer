@@ -68,7 +68,7 @@ async fn test_should_be_able_to_defend_an_unattacked_square(
 
   assert_eq!(team.id, added[0].0);
   assert_eq!(team.key, added[0].1);
-  assert_eq!(team.role_used, false);
+  assert!(!team.role_used);
   assert_eq!(team.requests_left, 29);
   assert!(elapsed < 1_000, "elapsed {elapsed:?}");
 }

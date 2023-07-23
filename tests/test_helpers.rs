@@ -71,6 +71,7 @@ where
   })
 }
 
+#[allow(dead_code)]
 pub async fn start_game(games: &mut Games, game_id: i32, host_id: i32, host_key: String) {
   let sender = SenderDetails {
     team_id: host_id,
