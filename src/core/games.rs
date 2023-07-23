@@ -548,7 +548,7 @@ impl Games {
           health?,
         ))
       })
-      .ok_or_else(|| Error::FailedToDefendSquare)?;
+      .ok_or(Error::FailedToDefendSquare)?;
 
     let square = GridSquare {
       bonus,
