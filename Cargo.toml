@@ -1,5 +1,5 @@
 [workspace]
-members = ["game_core"]
+members = ["game_core", "tests_integration", "server"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [package]

@@ -466,10 +466,8 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "postgres-syntax",
- "rstest",
  "serde",
  "serde_json",
- "speculoos",
  "sqlx",
  "strum",
  "strum_macros",
@@ -1183,6 +1181,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "server"
+version = "0.1.0"
+
+[[package]]
 name = "sha1"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1563,6 +1565,17 @@ dependencies = [
  "redox_syscall",
  "rustix",
  "windows-sys",
+]
+
+[[package]]
+name = "tests_integration"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "game_core",
+ "rstest",
+ "sqlx",
+ "tokio",
 ]
 
 [[package]]
