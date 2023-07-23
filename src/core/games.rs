@@ -665,13 +665,15 @@ impl Games {
     // only update if game_id exists and requester's team_id == game's host's team_id
     // AND game status is waiting_for_registrations
 
-    let row: (
+    type Row = (
       Option<i32>,
       Option<Json<GameStatus>>,
       Option<Json<GameStatus>>,
       Option<i32>,
       Option<String>,
-    ) = sqlx::query_as(
+    );
+
+    let row: Row = sqlx::query_as(
       "
         WITH
           previous_status AS (
