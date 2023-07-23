@@ -596,9 +596,9 @@ impl Games {
       owner_id,
       row: row_index,
       column: column_index,
-      created_at: created_at,
-      bonus: bonus,
-      health: health,
+      created_at,
+      bonus,
+      health,
       mine: None,
     };
 
