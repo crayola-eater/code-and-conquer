@@ -1,6 +1,4 @@
-use code_and_conquer::types::{
-  AttackRequest, AttackResponse, Command, CommandResponse, Error, GameStatus, SenderDetails, TeamRole,
-};
+use game_core::types::{AttackRequest, AttackResponse, Command, CommandResponse, Error, GameStatus, SenderDetails, TeamRole};
 
 use rstest::*;
 

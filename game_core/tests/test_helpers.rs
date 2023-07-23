@@ -1,5 +1,5 @@
-use code_and_conquer::core::games;
-use code_and_conquer::types::{
+use game_core::core::games;
+use game_core::types::{
   Command, CommandResponse, CreateAndJoinRequest, GameStatus, Games, JoinExistingRequest, Result, SenderDetails, StartRequest,
   TeamRole,
 };

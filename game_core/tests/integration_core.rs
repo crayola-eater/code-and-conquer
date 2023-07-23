@@ -1,4 +1,4 @@
-use code_and_conquer::types::{
+use game_core::types::{
   AttackRequest, Command, CommandResponse, Error, GameStatus, JoinExistingRequest, QueryGameRequest, QueryGridSquareRequest,
   SenderDetails, StartRequest, TeamRole,
 };

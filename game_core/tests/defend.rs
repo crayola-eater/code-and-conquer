@@ -3,7 +3,7 @@ use rstest::*;
 mod test_helpers;
 use test_helpers::{setup_with_players, start_game, TestSetup};
 
-use code_and_conquer::types::{
+use game_core::types::{
   AttackRequest, AttackResponse, Command, CommandResponse, DefendRequest, DefendResponse, Error, GameStatus, QueryGameRequest,
   SenderDetails, TeamRole,
 };
