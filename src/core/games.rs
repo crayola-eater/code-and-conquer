@@ -276,7 +276,7 @@ impl Games {
     debug_assert_eq!(team_id, request.sender.team_id);
 
     Some(&team_key)
-      .filter(|key| key.as_str() == &request.sender.team_key)
+      .filter(|key| key.as_str() == request.sender.team_key)
       .ok_or(Error::InvalidCredentials)?;
 
     Some(game_id)
