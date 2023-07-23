@@ -291,7 +291,7 @@ impl Games {
 
     Some(game_status)
       .filter(|status| *status == GameStatus::Started)
-      .ok_or_else(|| Error::InvalidGameStatus {
+      .ok_or(Error::InvalidGameStatus {
         current: game_status,
         required: GameStatus::Started,
         action: "attack square",
