@@ -287,7 +287,7 @@ impl Games {
 
     Some(requests_left)
       .filter(|count| count > &0)
-      .ok_or_else(|| Error::NoMoreRequestsLeft)?;
+      .ok_or(Error::NoMoreRequestsLeft)?;
 
     Some(game_status)
       .filter(|status| *status == GameStatus::Started)
