@@ -269,7 +269,7 @@ impl Games {
       .bind(request.sender.team_id)
       .fetch_optional(&mut *tx)
       .await?
-      .ok_or_else(|| Error::InvalidTeamId {
+      .ok_or(Error::InvalidTeamId {
         team_id: request.sender.team_id,
       })?;
 
