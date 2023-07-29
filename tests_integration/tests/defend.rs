@@ -46,8 +46,7 @@ async fn test_should_be_able_to_defend_an_unattacked_square(
 
   let elapsed = (chrono::Utc::now() - team.time_of_last_command.unwrap())
     .to_std()
-    .unwrap()
-    .as_millis();
+    .map_or(0, |d| d.as_millis());
 
   assert_eq!(team.id, added[0].0);
   assert_eq!(team.key, added[0].1);
