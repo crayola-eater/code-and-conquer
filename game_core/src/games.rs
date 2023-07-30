@@ -1,6 +1,6 @@
 use crate::commands::{
-  try_attack_a_square, try_create_and_join_a_game, try_defend_a_square, try_join_an_existing_game, try_query_game,
-  try_query_grid_square, try_start,
+  try_attack_a_square, try_create_and_join_a_game, try_defend_a_square, try_join_an_existing_game, try_place_a_mine,
+  try_query_game, try_query_grid_square, try_start,
 };
 use crate::types::{
   AttackRequest, AttackResponse, CreateAndJoinRequest, CreateAndJoinResponse, DefendRequest, DefendResponse, Error,
@@ -151,7 +151,7 @@ impl Games {
   }
 
   pub async fn try_place_a_mine(&mut self, request: PlaceMineRequest) -> Result<PlaceMineResponse> {
-    todo!("{request:?}")
+    try_place_a_mine(&self.db_pool, request).await
   }
 
   pub async fn try_start(&mut self, request: StartRequest) -> Result<StartResponse> {

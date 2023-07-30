@@ -10,7 +10,7 @@ pub use attack::{try_attack_a_square, AttackRequest, AttackResponse};
 pub use create_and_join::{try_create_and_join_a_game, CreateAndJoinRequest, CreateAndJoinResponse};
 pub use defend::{try_defend_a_square, DefendRequest, DefendResponse};
 pub use join_existing::{try_join_an_existing_game, JoinExistingRequest, JoinExistingResponse};
-pub use place_mine::{PlaceMineRequest, PlaceMineResponse};
+pub use place_mine::{try_place_a_mine, PlaceMineRequest, PlaceMineResponse};
 pub use query::{
   try_query_game, try_query_grid_square, QueryGameRequest, QueryGameResponse, QueryGridResponse, QueryGridSquareRequest,
   QueryGridSquareResponse,
