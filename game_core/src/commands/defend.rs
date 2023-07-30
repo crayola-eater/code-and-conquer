@@ -172,6 +172,9 @@ pub async fn try_defend_a_square(pool: &PgPool, request: DefendRequest) -> Resul
         required: GameStatus::Started,
         action: "defend square",
       },
+      _ => Error::Unexpected {
+        message: "failed to defend",
+      },
     })
     .map_or(Ok(()), Err)?;
 
