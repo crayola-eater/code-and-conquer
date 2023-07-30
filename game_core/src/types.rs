@@ -86,6 +86,8 @@ pub enum DatabaseErrorKind {
   InvalidGameId,
   InvalidCredentials,
   NoMoreRequestsLeft,
+  RoleAlreadyUsed,
   InvalidCoordinates,
   InvalidGameStatus,
+  InvalidTeamRole,
 }

@@ -1,4 +1,4 @@
-use crate::types::GameStatus;
+use crate::types::{GameStatus, TeamRole};
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]
@@ -57,6 +57,15 @@ pub enum Error {
 
   #[error("Cannot join after host has started the game")]
   CannotJoinAfterHostHasStarted,
+
+  #[error("Only minelayers can place mines, your team is {team_role:?}")]
+  OnlyMinelayersCanPlaceMines { team_role: TeamRole },
+
+  #[error("This square already has a mine. Cannot add more than one mine to a square.")]
+  SquareAlreadyHasMine,
+
+  #[error("Your team has already used its role. Roles can only be used once.")]
+  RoleAlreadyUsed,
 
   #[error("Failed to connect to database {cause}")]
   FailedToConnectToDatabase { cause: String },
